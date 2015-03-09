@@ -1,5 +1,6 @@
 from rauth import OAuth1Service
-from saveTokens import saveTokens
+from saveTokens import saveTokens, loadTokens
+import os.path
 import webbrowser
 
 
@@ -49,8 +50,31 @@ class TwitterService:
         print "\naccess_token_secret:"
         print access_token_secret
 
+    def resume_session(self):
+        access_token, access_token_secret = loadTokens()
+        self.session = self.twitter.get_session((access_token, access_token_secret))
+        print "session loaded"
+        print "access_token:"
+        print access_token
+        print "\naccess_token_secret:"
+        print access_token_secret
+
+    def post_status(self,text):
+        payload = {'status':str(text) }
+        r = self.session.post("https://api.twitter.com/1.1/statuses/update.json", data=payload)
+        print r.json()
+
+    def get_timeline(self):
+        r = self.session.get('https://api.twitter.com/1.1/statuses/home_timeline.json', params={'format': 'json'})
+        print r.json()
+
 
 twitterService = TwitterService()
 twitterService.create_service()
-twitterService.request_access()
-twitterService.get_access_token()
+# twitterService.request_access()
+# twitterService.get_access_token()
+# twitterService.post_status('Another test HTTP Post request')
+# twitterService.get_timeline()
+
+twitterService.resume_session()
+twitterService.post_status('D @rorasa Say Hi! Tell me please.')
