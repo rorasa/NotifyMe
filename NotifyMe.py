@@ -1,80 +1,35 @@
-from rauth import OAuth1Service
-from saveTokens import saveTokens, loadTokens
-import os.path
-import webbrowser
+from notifyme_social import TwitterService
+import sys
 
+number_argv = len(sys.argv)
 
-print("Hi")
-print("Initiating OAuth")
+if number_argv <2:
+    print "Please select a service"
+    sys.exit()
 
-class TwitterService:
-    def create_service(self):
-        self.twitter = OAuth1Service(
-            consumer_key = "lpoFF3SyAcZzLNkOtnKx1Jue9",
-            consumer_secret = "AyacUUlN72C3JR5nvKffdlHYLbnfwCuIFW26bYP6VkyFA5YzPB",
-            name='twitter',
-            access_token_url='https://api.twitter.com/oauth/access_token',
-            request_token_url='https://api.twitter.com/oauth/request_token',
-            authorize_url='https://api.twitter.com/oauth/authorize',
-            base_url='https://api.twitter.com/1/' )
+if sys.argv[1] == 'twitter':
+    print "Selecting twitter service"
 
-    def request_access(self):
-        self.request_token, self.request_token_secret = self.twitter.get_request_token()
+    if number_argv < 3:
+        print "Please give NotifyMe a command (Expected command arguments)"
+    elif sys.argv[2] == 'login':
+        print "Logging in"
 
-        print "request_token:"
-        print self.request_token
-        print "\nrequest_token_secret:"
-        print self.request_token_secret
+        twitterService = TwitterService()
+        twitterService.create_service()
+        twitterService.request_access()
+        print "Please authorise NotifyMe on the Twitter website"
+        twitterService.get_access_token()
+        print "Logged in successfully"
+    elif sys.argv[2] == 'post':
+        if number_argv > 3:
+            text = str(sys.argv[3])
 
-        authorize_url = self.twitter.get_authorize_url(self.request_token)
+            twitterService = TwitterService()
+            twitterService.create_service()
+            twitterService.resume_session()
+            twitterService.post_status(text)
 
-        print "\nAuthorisation url:"
-        print authorize_url
-
-        webbrowser.open(authorize_url)
-
-    def get_access_token(self):
-        pin = raw_input('Enter PIN from browser: ')
-        self.session = self.twitter.get_auth_session(self.request_token,
-                                                self.request_token_secret,
-                                                method='POST',
-                                                data={'oauth_verifier': pin})
-
-        access_token = self.session.access_token
-        access_token_secret = self.session.access_token_secret
-        saveTokens(access_token,access_token_secret)
-
-        print "Authorised successful\n"
-        print "access_token:"
-        print access_token
-        print "\naccess_token_secret:"
-        print access_token_secret
-
-    def resume_session(self):
-        access_token, access_token_secret = loadTokens()
-        self.session = self.twitter.get_session((access_token, access_token_secret))
-        print "session loaded"
-        print "access_token:"
-        print access_token
-        print "\naccess_token_secret:"
-        print access_token_secret
-
-    def post_status(self,text):
-        payload = {'status':str(text) }
-        r = self.session.post("https://api.twitter.com/1.1/statuses/update.json", data=payload)
-        print r.json()
-
-    def get_timeline(self):
-        r = self.session.get('https://api.twitter.com/1.1/statuses/home_timeline.json', params={'format': 'json'})
-        print r.json()
-
-
-twitterService = TwitterService()
-twitterService.create_service()
-# twitterService.request_access()
-# twitterService.get_access_token()
-# twitterService.post_status('Another test HTTP Post request')
-# twitterService.get_timeline()
-
-twitterService.resume_session()
-twitterService.post_status('D @rorasa Say Hi! Tell me please.')
+            print "Posted "+text+" to twitter"
+        else:
+            print "No text to post. Sorry."
